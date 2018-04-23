@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from argparse import ArgumentParser
 from configparser import ConfigParser
 from datetime import date, timedelta
 
@@ -40,10 +41,22 @@ def send_mail(subject, body):
 
 
 if __name__ == '__main__':
-    conf = ConfigParser()
-    conf.read('config.ini')
+    parser = ArgumentParser()
+    parser.add_argument(
+      '-c', '--config', default='config.ini',
+      help='path to config (default: config.ini)')
+    parser.add_argument(
+      '--dry-run', action='store_true',
+      help='don\'t send a mail, just print it\'s content')
+    parser.add_argument(
+      '--date', default=None,
+      help='use given date (format %%Y-%%m-%%d) instead of calculated one')
+    args = parser.parse_args()
 
-    date = next_overhead_date()
+    conf = ConfigParser()
+    conf.read(args.config)
+
+    date = args.date if args.date is not None else next_overhead_date()
 
     try:
         wiki = PmWikiOverheadGrepper(conf.get('pmwiki', 'domain'))
@@ -54,6 +67,9 @@ if __name__ == '__main__':
         mail_body = 'Overhead {}\n\n{}\n\nhttps://{}/Overhead/{}'.format(
           date, content, conf.get('pmwiki', 'domain'), date)
 
-        send_mail(mail_subject, mail_body)
+        if args.dry_run:
+            print('Subject: {}\n\n{}\n'.format(mail_subject, mail_body))
+        else:
+            send_mail(mail_subject, mail_body)
     except Exception as e:
         print('Something went wront: {}'.format(e))

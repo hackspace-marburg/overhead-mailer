@@ -1,17 +1,15 @@
-#!/usr/bin/env python
-
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from datetime import date, timedelta
 
-from pmwiki import PmWikiOverheadGrepper
+from om.pmwiki import PmWikiOverheadGrepper
 
 from email.message import EmailMessage
 from email.utils import formatdate
 from smtplib import SMTP
 
 
-def next_overhead_date():
+def next_overhead_date(conf):
     ''' Calculates the next Overhead's day based on the given day of the week
         in the configuration and the current date.
     '''
@@ -21,7 +19,7 @@ def next_overhead_date():
     return overhead_day.strftime('%Y-%m-%d')
 
 
-def send_mail(subject, body):
+def send_mail(conf, subject, body):
     ''' Simple function to compose an email with the given subject and body
         based on the config.
     '''
@@ -40,7 +38,7 @@ def send_mail(subject, body):
     smtp.close()
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser()
     parser.add_argument(
       '-c', '--config', default='config.ini',
@@ -56,7 +54,7 @@ if __name__ == '__main__':
     conf = ConfigParser()
     conf.read(args.config)
 
-    date = args.date if args.date is not None else next_overhead_date()
+    date = args.date if args.date is not None else next_overhead_date(conf)
 
     try:
         wiki = PmWikiOverheadGrepper(conf.get('pmwiki', 'domain'))
@@ -70,6 +68,10 @@ if __name__ == '__main__':
         if args.dry_run:
             print('Subject: {}\n\n{}\n'.format(mail_subject, mail_body))
         else:
-            send_mail(mail_subject, mail_body)
+            send_mail(conf, mail_subject, mail_body)
     except Exception as e:
         print('Something went wront: {}'.format(e))
+
+
+if __name__ == '__main__':
+    main()

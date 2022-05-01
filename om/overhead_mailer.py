@@ -30,10 +30,13 @@ def send_mail(conf, subject, body):
     msg['Date'] = formatdate()
     msg.set_content(body)
 
+    with open(conf.get('smtp', 'password_file'), 'r') as f:
+        smtp_pass = f.read().strip()
+
     smtp = SMTP(conf.get('smtp', 'server'), conf.getint('smtp', 'port'))
     smtp.starttls()
     smtp.ehlo()
-    smtp.login(conf.get('smtp', 'username'), conf.get('smtp', 'password'))
+    smtp.login(conf.get('smtp', 'username'), smtp_pass)
     smtp.send_message(msg)
     smtp.close()
 
